@@ -3,8 +3,11 @@ import json
 import re
 
 def text_to_json(text, sample_json):
-    # Parse the sample JSON
-    sample = json.loads(sample_json)
+    try:
+        # Parse the sample JSON
+        sample = json.loads(sample_json)
+    except json.JSONDecodeError:
+        raise ValueError("Invalid JSON format in the sample. Please check and try again.")
     
     # Extract keys from the sample JSON
     keys = list(sample.keys())
@@ -60,8 +63,8 @@ def main():
                     mime="application/json",
                     data=json_string,
                 )
-            except json.JSONDecodeError:
-                st.error("Invalid JSON format in the sample. Please check and try again.")
+            except ValueError as ve:
+                st.error(str(ve))
         else:
             st.warning("Please enter both sample JSON and text to convert.")
 
