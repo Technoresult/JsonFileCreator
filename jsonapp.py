@@ -12,8 +12,8 @@ def text_to_json(text, sample_json):
     # Extract keys from the sample JSON
     keys = list(sample.keys())
     
-    # Initialize result as a dictionary
-    result = {}
+    # Initialize result as a list
+    result = []
     
     # Split the input text into lines
     lines = text.strip().split('\n')
@@ -36,13 +36,10 @@ def text_to_json(text, sample_json):
                 "1_kg": price_1_kg
             }
             
-            # Add the JSON object to the result
-            result[city] = obj
+            # Add the JSON object to the result list
+            result.append(obj)
     
-    # Convert result to a list of dictionaries
-    result_list = list(result.values())
-    
-    return result_list
+    return result
 
 def main():
     st.title("Text to JSON Converter")
