@@ -58,6 +58,14 @@ def upload_to_github(repo, path, token, content, message="Upload JSON file"):
 
 st.title("Precious Metal Price Data Converter")
 
+# Initialize session state variables
+if 'github_repo' not in st.session_state:
+    st.session_state.github_repo = ""
+if 'github_path' not in st.session_state:
+    st.session_state.github_path = ""
+if 'github_token' not in st.session_state:
+    st.session_state.github_token = ""
+
 metal_type = st.selectbox("Select metal type:", ["Gold", "Silver"])
 
 st.write(f"Paste your {metal_type.lower()} price data below. The format should be:")
@@ -85,13 +93,13 @@ if st.button("Convert to JSON"):
         
         # GitHub upload section
         st.write("Upload to GitHub")
-        github_repo = st.text_input("GitHub Repo (e.g., username/repo)")
-        github_path = st.text_input("File Path in Repo (e.g., data/metal_prices.json)")
-        github_token = os.getenv("GITHUB_TOKEN")  # Use environment variable here
+        st.session_state.github_repo = st.text_input("GitHub Repo (e.g., username/repo)", value=st.session_state.github_repo)
+        st.session_state.github_path = st.text_input("File Path in Repo (e.g., data/metal_prices.json)", value=st.session_state.github_path)
+        st.session_state.github_token = st.text_input("GitHub Access Token", type="password", value=st.session_state.github_token)
         
         if st.button("Upload to GitHub"):
-            if github_repo and github_path and github_token:
-                response = upload_to_github(github_repo, github_path, github_token, json_string)
+            if st.session_state.github_repo and st.session_state.github_path and st.session_state.github_token:
+                response = upload_to_github(st.session_state.github_repo, st.session_state.github_path, st.session_state.github_token, json_string)
                 if response.status_code == 201:
                     st.success("File uploaded successfully!")
                 else:
