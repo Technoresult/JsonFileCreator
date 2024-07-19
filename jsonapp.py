@@ -23,27 +23,24 @@ def table_to_json(table_data, metal_type):
         
         return {"gold_prices": gold_prices}
     else:
-        # Silver conversion (keeping the previous format for silver)
+        # Silver conversion
         parts = re.findall(r'(\w+)\s+(₹\s*[\d,.]+)\s+(₹\s*[\d,.]+)\s+(₹\s*[\d,.]+)', table_data)
         
-        headers = ["10gram", "100gram", "1kg"]
-        cities = []
+        silver_rates = []
         
         for city, price_10g, price_100g, price_1kg in parts:
             try:
                 city_dict = {
-                    "name": city,
-                    "prices": {
-                        headers[0]: float(price_10g.replace('₹', '').replace(',', '').strip()),
-                        headers[1]: float(price_100g.replace('₹', '').replace(',', '').strip()),
-                        headers[2]: float(price_1kg.replace('₹', '').replace(',', '').strip())
-                    }
+                    "city": city,
+                    "10_gram": price_10g.strip(),
+                    "100_gram": price_100g.strip(),
+                    "1_kg": price_1kg.strip()
                 }
-                cities.append(city_dict)
+                silver_rates.append(city_dict)
             except ValueError:
                 st.warning(f"Skipping invalid data for city: {city}, prices: {price_10g}, {price_100g}, {price_1kg}")
         
-        return {"cities": cities}
+        return {"silver_rates": silver_rates}
 
 st.title("Precious Metal Price Data Converter")
 
