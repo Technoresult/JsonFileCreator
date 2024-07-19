@@ -3,27 +3,47 @@ import json
 import re
 
 def table_to_json(table_data, metal_type):
-    # Use regex to split the data into city names and prices
-    parts = re.findall(r'(\w+)\s+(₹\s*[\d,.]+)\s+(₹\s*[\d,.]+)\s+(₹\s*[\d,.]+)', table_data)
-    
-    headers = ["24K", "22K", "18K"] if metal_type == "Gold" else ["10gram", "100gram", "1kg"]
-    cities = []
-    
-    for city, price_1, price_2, price_3 in parts:
-        try:
-            city_dict = {
-                "name": city,
-                "prices": {
-                    headers[0]: float(price_1.replace('₹', '').replace(',', '').strip()),
-                    headers[1]: float(price_2.replace('₹', '').replace(',', '').strip()),
-                    headers[2]: float(price_3.replace('₹', '').replace(',', '').strip())
+    if metal_type == "Gold":
+        # Use regex to split the data into city names and prices
+        parts = re.findall(r'(\w+)\s+(₹\s*[\d,.]+)\s+(₹\s*[\d,.]+)\s+(₹\s*[\d,.]+)', table_data)
+        
+        gold_prices = []
+        
+        for city, price_24k, price_22k, price_18k in parts:
+            try:
+                city_dict = {
+                    "City": city,
+                    "24K Today": price_24k.strip(),
+                    "22K Today": price_22k.strip(),
+                    "18K Today": price_18k.strip()
                 }
-            }
-            cities.append(city_dict)
-        except ValueError:
-            st.warning(f"Skipping invalid data for city: {city}, prices: {price_1}, {price_2}, {price_3}")
-    
-    return {"cities": cities}
+                gold_prices.append(city_dict)
+            except ValueError:
+                st.warning(f"Skipping invalid data for city: {city}, prices: {price_24k}, {price_22k}, {price_18k}")
+        
+        return {"gold_prices": gold_prices}
+    else:
+        # Silver conversion (keeping the previous format for silver)
+        parts = re.findall(r'(\w+)\s+(₹\s*[\d,.]+)\s+(₹\s*[\d,.]+)\s+(₹\s*[\d,.]+)', table_data)
+        
+        headers = ["10gram", "100gram", "1kg"]
+        cities = []
+        
+        for city, price_10g, price_100g, price_1kg in parts:
+            try:
+                city_dict = {
+                    "name": city,
+                    "prices": {
+                        headers[0]: float(price_10g.replace('₹', '').replace(',', '').strip()),
+                        headers[1]: float(price_100g.replace('₹', '').replace(',', '').strip()),
+                        headers[2]: float(price_1kg.replace('₹', '').replace(',', '').strip())
+                    }
+                }
+                cities.append(city_dict)
+            except ValueError:
+                st.warning(f"Skipping invalid data for city: {city}, prices: {price_10g}, {price_100g}, {price_1kg}")
+        
+        return {"cities": cities}
 
 st.title("Precious Metal Price Data Converter")
 
@@ -61,10 +81,10 @@ st.write("Note: Make sure your data is in the correct format. Each city should b
 st.write("Example data:")
 if metal_type == "Gold":
     example_data = """
-    Chennai ₹ 6,875 ₹ 7,500 ₹ 5,632 
-    Mumbai ₹ 6,815 ₹ 7,435 ₹ 5,576 
-    Delhi ₹ 6,830 ₹ 7,450 ₹ 5,588 
-    Kolkata ₹ 6,815 ₹ 7,435 ₹ 5,576 
+    Chennai ₹ 7,452 ₹ 6,831 ₹ 5,596
+    Mumbai ₹ 7,403 ₹ 6,786 ₹ 5,553
+    Delhi ₹ 7,418 ₹ 6,800 ₹ 5,564
+    Kolkata ₹ 7,403 ₹ 6,786 ₹ 5,553
     """
 else:
     example_data = """
