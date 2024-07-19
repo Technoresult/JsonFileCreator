@@ -2,70 +2,52 @@ import streamlit as st
 import json
 import re
 
-def text_to_json(text, sample_json):
-    # Parse the sample JSON
-    sample = json.loads(sample_json)
+def table_to_json(table_data):
+    # Use regex to split the data into city names and prices
+    parts = re.findall(r'(\w+)\s+(₹\s*[\d,.]+)\s+(₹\s*[\d,.]+)\s+(₹\s*[\d,.]+)', table_data)
     
-    # Split the input text into lines
-    lines = text.strip().split('\n')
+    headers = ["10gram", "100gram", "1kg"]
+    cities = []
     
-    # Create a list to store the resulting JSON objects
-    result = []
+    for city, price_10g, price_100g, price_1kg in parts:
+        try:
+            city_dict = {
+                "name": city,
+                "prices": {
+                    headers[0]: float(price_10g.replace('₹', '').replace(',', '').strip()),
+                    headers[1]: float(price_100g.replace('₹', '').replace(',', '').strip()),
+                    headers[2]: float(price_1kg.replace('₹', '').replace(',', '').strip())
+                }
+            }
+            cities.append(city_dict)
+        except ValueError:
+            st.warning(f"Skipping invalid data for city: {city}, prices: {price_10g}, {price_100g}, {price_1kg}")
     
-    for line in lines:
-        # Use regex to split by both currency symbol and space to extract data
-        data = re.split(r' [₹ ]', line.strip())
-        
-        # Create a new JSON object
-        obj = {}
-        obj["city"] = data[0]  # First element is the city
-        
-        # Assign values to corresponding keys
-        obj["10_gram"] = f"₹ {data[1]}"
-        obj["100_gram"] = f"₹ {data[2]}"
-        obj["1_kg"] = f"₹ {data[3]}"
-        
-        result.append(obj)
-    
-    return result
+    return {"cities": cities}
 
-def main():
-    st.title("Text to JSON Converter")
-    
-    # Sample JSON format
-    sample_json = '''
-    {
-      "city": "Chennai",
-      "10_gram": "₹ 1,005",
-      "100_gram": "₹ 10,050",
-      "1_kg": "₹ 1,00,500"
-    }
-    '''
-    
-    # Input for text to convert
-    input_text = st.text_area("Enter text to convert:", 
-                              value="Ahmedabad ₹ 960 ₹ 9,600 ₹ 96,000\nJaipur ₹ 960 ₹ 9,600 ₹ 96,000",
-                              height=150)
-    
-    if st.button("Convert"):
-        if input_text:
-            try:
-                result = text_to_json(input_text, sample_json)
-                st.subheader("Converted JSON:")
-                st.json(result)
-                
-                # Option to download the JSON file
-                json_string = json.dumps(result, indent=2)
-                st.download_button(
-                    label="Download JSON",
-                    file_name="converted.json",
-                    mime="application/json",
-                    data=json_string,
-                )
-            except Exception as e:
-                st.error(f"Error: {e}")
-        else:
-            st.warning("Please enter text to convert.")
+st.title("Silver Price Data Converter")
 
-if __name__ == "__main__":
-    main()
+st.write("Paste your silver price data below. The format should be:")
+st.code("City ₹ 10gram_price ₹ 100gram_price ₹ 1kg_price")
+
+table_data = st.text_area("Paste your data here:", height=200)
+
+if st.button("Convert to JSON"):
+    if table_data:
+        json_data = table_to_json(table_data)
+        
+        st.write("Converted JSON data:")
+        st.json(json_data)
+        
+        # Option to download the JSON file
+        json_string = json.dumps(json_data, indent=2)
+        st.download_button(
+            label="Download JSON",
+            file_name="silver_prices.json",
+            mime="application/json",
+            data=json_string,
+        )
+    else:
+        st.warning("Please paste some data before converting.")
+
+st.write("Note: Make sure your data is in the correct format. Each city should be on a new line or separated by spaces.")
