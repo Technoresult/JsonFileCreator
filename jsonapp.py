@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import json
 import re
@@ -86,7 +87,7 @@ if st.button("Convert to JSON"):
         st.write("Upload to GitHub")
         github_repo = st.text_input("GitHub Repo (e.g., username/repo)")
         github_path = st.text_input("File Path in Repo (e.g., data/metal_prices.json)")
-        github_token = st.text_input("GitHub Access Token", type="Token")
+        github_token = os.getenv("GITHUB_TOKEN")  # Use environment variable here
         
         if st.button("Upload to GitHub"):
             if github_repo and github_path and github_token:
