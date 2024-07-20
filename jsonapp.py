@@ -65,6 +65,8 @@ if 'github_path' not in st.session_state:
     st.session_state.github_path = ""
 if 'github_token' not in st.session_state:
     st.session_state.github_token = ""
+if 'json_string' not in st.session_state:
+    st.session_state.json_string = ""
 
 metal_type = st.selectbox("Select metal type:", ["Gold", "Silver"])
 
@@ -83,31 +85,44 @@ if st.button("Convert to JSON"):
         st.write("Converted JSON data:")
         st.json(json_data)
         
-        json_string = json.dumps(json_data, indent=2)
+        st.session_state.json_string = json.dumps(json_data, indent=2)
         st.download_button(
             label="Download JSON",
             file_name=f"{metal_type.lower()}_prices.json",
             mime="application/json",
-            data=json_string,
+            data=st.session_state.json_string,
         )
-        
-        # GitHub upload section
-        st.write("Upload to GitHub")
-        st.session_state.github_repo = st.text_input("GitHub Repo (e.g., username/repo)", value=st.session_state.github_repo)
-        st.session_state.github_path = st.text_input("File Path in Repo (e.g., data/metal_prices.json)", value=st.session_state.github_path)
-        st.session_state.github_token = st.text_input("GitHub Access Token", type="password", value=st.session_state.github_token)
-        
-        if st.button("Upload to GitHub"):
-            if st.session_state.github_repo and st.session_state.github_path and st.session_state.github_token:
-                response = upload_to_github(st.session_state.github_repo, st.session_state.github_path, st.session_state.github_token, json_string)
-                if response.status_code == 201:
-                    st.success("File uploaded successfully!")
-                else:
-                    st.error(f"Failed to upload file: {response.json().get('message', 'Unknown error')}")
-            else:
-                st.warning("Please provide all required GitHub details.")
     else:
         st.warning("Please paste some data before converting.")
+
+# GitHub upload section
+st.write("Upload to GitHub")
+
+with st.form(key='github_upload_form'):
+    repo = st.text_input("GitHub Repo (e.g., username/repo)", value=st.session_state.github_repo, key="repo_input")
+    path = st.text_input("File Path in Repo (e.g., data/metal_prices.json)", value=st.session_state.github_path, key="path_input")
+    token = st.text_input("GitHub Access Token", type="password", value=st.session_state.github_token, key="token_input")
+    
+    submit_button = st.form_submit_button(label="Upload to GitHub")
+
+if submit_button:
+    if repo and path and token and st.session_state.json_string:
+        # Update session state
+        st.session_state.github_repo = repo
+        st.session_state.github_path = path
+        st.session_state.github_token = token
+        
+        # Perform the upload
+        response = upload_to_github(repo, path, token, st.session_state.json_string)
+        if response.status_code == 201:
+            st.success("File uploaded successfully!")
+        else:
+            st.error(f"Failed to upload file: {response.json().get('message', 'Unknown error')}")
+    else:
+        if not st.session_state.json_string:
+            st.warning("Please convert data to JSON before uploading.")
+        else:
+            st.warning("Please provide all required GitHub details.")
 
 st.write("Note: Make sure your data is in the correct format. Each city should be on a new line or separated by spaces.")
 
