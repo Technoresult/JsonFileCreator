@@ -90,9 +90,9 @@ if st.button("Convert to JSON"):
         json_data = table_to_json(table_data, metal_type)
         
         st.write("Converted JSON data:")
-        st.json(json_data)
+        st.json(json_data, expanded=True)
         
-        st.session_state.json_string = json.dumps(json_data, indent=2)
+        st.session_state.json_string = json.dumps(json_data, indent=2, ensure_ascii=False).encode('utf-8').decode('utf-8')
         st.download_button(
             label="Download JSON",
             file_name=f"{metal_type.lower()}_prices.json",
