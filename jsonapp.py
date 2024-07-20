@@ -42,7 +42,7 @@ def table_to_json(table_data, metal_type):
                 st.warning(f"Skipping invalid data for city: {city}, prices: {price_10g}, {price_100g}, {price_1kg}")
         
         return {"silver_rates": silver_rates}
-
+#upload to GitHub Function
 def upload_to_github(repo, path, token, content, message="Upload JSON file"):
     url = f"https://api.github.com/repos/{repo}/contents/{path}"
     headers = {
@@ -53,11 +53,13 @@ def upload_to_github(repo, path, token, content, message="Upload JSON file"):
         "message": message,
         "content": base64.b64encode(content.encode('utf-8')).decode('utf-8')
     }
-     get_response = requests.get(url, headers=headers)
+    
+    # First, try to get the file (to update it if it exists)
+    get_response = requests.get(url, headers=headers)
     if get_response.status_code == 200:
         file_sha = get_response.json()['sha']
         data['sha'] = file_sha
-        
+    
     response = requests.put(url, headers=headers, json=data)
     return response
 
