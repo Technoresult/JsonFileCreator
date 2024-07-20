@@ -53,6 +53,11 @@ def upload_to_github(repo, path, token, content, message="Upload JSON file"):
         "message": message,
         "content": base64.b64encode(content.encode('utf-8')).decode('utf-8')
     }
+     get_response = requests.get(url, headers=headers)
+    if get_response.status_code == 200:
+        file_sha = get_response.json()['sha']
+        data['sha'] = file_sha
+        
     response = requests.put(url, headers=headers, json=data)
     return response
 
@@ -105,6 +110,7 @@ with st.form(key='github_upload_form'):
     
     submit_button = st.form_submit_button(label="Upload to GitHub")
 
+# In the form submission handling section, update the error message:
 if submit_button:
     if repo and path and token and st.session_state.json_string:
         # Update session state
@@ -114,10 +120,12 @@ if submit_button:
         
         # Perform the upload
         response = upload_to_github(repo, path, token, st.session_state.json_string)
-        if response.status_code == 201:
+        if response.status_code == 201 or response.status_code == 200:
             st.success("File uploaded successfully!")
         else:
-            st.error(f"Failed to upload file: {response.json().get('message', 'Unknown error')}")
+            error_message = response.json().get('message', 'Unknown error')
+            st.error(f"Failed to upload file. Status code: {response.status_code}. Error: {error_message}")
+            st.error(f"Full response: {response.text}")
     else:
         if not st.session_state.json_string:
             st.warning("Please convert data to JSON before uploading.")
