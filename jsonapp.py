@@ -5,13 +5,16 @@ import re
 import requests
 import base64
 
+#New funciton Test
+
 def table_to_json(table_data, metal_type):
     if metal_type == "Gold":
+        # Update the regular expression to match the new order: 22K first, then 24K, and then 18K
         parts = re.findall(r'(\w+)\s+(₹\s*[\d,.]+)\s+(₹\s*[\d,.]+)\s+(₹\s*[\d,.]+)', table_data)
         
         gold_prices = []
         
-        for city, price_24k, price_22k, price_18k in parts:
+        for city, price_22k, price_24k, price_18k in parts:
             try:
                 city_dict = {
                     "City": city,
