@@ -118,7 +118,7 @@ st.write("Upload to GitHub")
 with st.form(key='github_upload_form'):
     repo = st.text_input("GitHub Repo (e.g., username/repo)", value=st.session_state.github_repo, key="repo_input")
     filename = generate_filename(metal_type)
-    path = st.text_input("File Path in Repo (e.g., data/metal_prices.json)", value=f"data/{filename}", key="path_input")
+    path = st.text_input("File Path in Repo (e.g., data/metal_prices.json)", value=f"Folder/{filename}", key="path_input")
     token = st.text_input("GitHub Access Token", type="password", value=st.session_state.github_token, key="token_input")
     
     submit_button = st.form_submit_button(label="Upload to GitHub")
