@@ -4,6 +4,12 @@ import json
 import re
 import requests
 import base64
+from datetime import datetime
+
+#Function to generate filename with date
+def generate_filename(metal_type):
+    today = datetime.now().strftime("%Y-%m-%d")
+    return f"{metal_type[0].upper()}_{today}.json"
 
 #New funciton Test
 
@@ -96,6 +102,7 @@ if st.button("Convert to JSON"):
         st.json(json_data, expanded=True)
         
         st.session_state.json_string = json.dumps(json_data, indent=2, ensure_ascii=False).encode('utf-8').decode('utf-8')
+        filename = generate_filename(metal_type)
         st.download_button(
             label="Download JSON",
             file_name=f"{metal_type.lower()}_prices.json",
@@ -110,7 +117,8 @@ st.write("Upload to GitHub")
 
 with st.form(key='github_upload_form'):
     repo = st.text_input("GitHub Repo (e.g., username/repo)", value=st.session_state.github_repo, key="repo_input")
-    path = st.text_input("File Path in Repo (e.g., data/metal_prices.json)", value=st.session_state.github_path, key="path_input")
+    filename = generate_filename(metal_type)
+    path = st.text_input("File Path in Repo (e.g., data/metal_prices.json)", value=f"data/{filename}, key="path_input")
     token = st.text_input("GitHub Access Token", type="password", value=st.session_state.github_token, key="token_input")
     
     submit_button = st.form_submit_button(label="Upload to GitHub")
