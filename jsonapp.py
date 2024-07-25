@@ -3,23 +3,18 @@ import streamlit as st
 import json
 import re
 import requests
-import base64
 from datetime import datetime
 
-#Function to generate filename with date
+# Function to generate filename with date
 def generate_filename(metal_type):
     today = datetime.now().strftime("%Y-%m-%d")
     return f"{metal_type[0].upper()}_{today}.json"
 
-#New funciton Test
-
+# Function to convert table data to JSON
 def table_to_json(table_data, metal_type):
     if metal_type == "Gold":
-        # Update the regular expression to match the new order: 22K first, then 24K, and then 18K
         parts = re.findall(r'(\w+)\s+(₹\s*[\d,.]+)\s+(₹\s*[\d,.]+)\s+(₹\s*[\d,.]+)', table_data)
-        
         gold_prices = []
-        
         for city, price_22k, price_24k, price_18k in parts:
             try:
                 city_dict = {
@@ -31,13 +26,10 @@ def table_to_json(table_data, metal_type):
                 gold_prices.append(city_dict)
             except ValueError:
                 st.warning(f"Skipping invalid data for city: {city}, prices: {price_24k}, {price_22k}, {price_18k}")
-        
         return {"gold_prices": gold_prices}
     else:
         parts = re.findall(r'(\w+)\s+(₹\s*[\d,.]+)\s+(₹\s*[\d,.]+)\s+(₹\s*[\d,.]+)', table_data)
-        
         silver_rates = []
-        
         for city, price_10g, price_100g, price_1kg in parts:
             try:
                 city_dict = {
@@ -49,38 +41,26 @@ def table_to_json(table_data, metal_type):
                 silver_rates.append(city_dict)
             except ValueError:
                 st.warning(f"Skipping invalid data for city: {city}, prices: {price_10g}, {price_100g}, {price_1kg}")
-        
         return {"silver_rates": silver_rates}
-#upload to GitHub Function
-def upload_to_github(repo, path, token, content, message="Upload JSON file"):
-    url = f"https://api.github.com/repos/{repo}/contents/{path}"
+
+# Function to upload JSON to Heroku
+def upload_to_heroku(file_name, content, heroku_url):
+    url = f"{heroku_url}/upload"
     headers = {
-        "Authorization": f"token {token}",
-        "Accept": "application/vnd.github.v3+json"
+        "Content-Type": "application/json"
     }
     data = {
-        "message": message,
-        "content": base64.b64encode(content.encode('utf-8')).decode('utf-8')
+        "fileName": file_name,
+        "content": content
     }
-    
-    # First, try to get the file (to update it if it exists)
-    get_response = requests.get(url, headers=headers)
-    if get_response.status_code == 200:
-        file_sha = get_response.json()['sha']
-        data['sha'] = file_sha
-    
-    response = requests.put(url, headers=headers, json=data)
+    response = requests.post(url, headers=headers, json=data)
     return response
 
 st.title("Precious Metal Price Data Converter")
 
 # Initialize session state variables
-if 'github_repo' not in st.session_state:
-    st.session_state.github_repo = ""
-if 'github_path' not in st.session_state:
-    st.session_state.github_path = ""
-if 'github_token' not in st.session_state:
-    st.session_state.github_token = ""
+if 'heroku_url' not in st.session_state:
+    st.session_state.heroku_url = ""
 if 'json_string' not in st.session_state:
     st.session_state.json_string = ""
 
@@ -97,10 +77,8 @@ table_data = st.text_area("Paste your data here:", height=200)
 if st.button("Convert to JSON"):
     if table_data:
         json_data = table_to_json(table_data, metal_type)
-        
         st.write("Converted JSON data:")
         st.json(json_data, expanded=True)
-        
         st.session_state.json_string = json.dumps(json_data, indent=2, ensure_ascii=False).encode('utf-8').decode('utf-8')
         filename = generate_filename(metal_type)
         st.download_button(
@@ -112,28 +90,19 @@ if st.button("Convert to JSON"):
     else:
         st.warning("Please paste some data before converting.")
 
-# GitHub upload section
-st.write("Upload to GitHub")
+# Heroku upload section
+st.write("Upload to Heroku")
 
-with st.form(key='github_upload_form'):
-    repo = st.text_input("GitHub Repo (e.g., username/repo)", value=st.session_state.github_repo, key="repo_input")
-    filename = generate_filename(metal_type)
-    path = st.text_input("File Path in Repo (e.g., data/metal_prices.json)", value=f"Folder/{filename}", key="path_input")
-    token = st.text_input("GitHub Access Token", type="password", value=st.session_state.github_token, key="token_input")
-    
-    submit_button = st.form_submit_button(label="Upload to GitHub")
+with st.form(key='heroku_upload_form'):
+    heroku_url = st.text_input("Heroku App URL (e.g., https://your-heroku-app.herokuapp.com)", value=st.session_state.heroku_url, key="heroku_url_input")
+    submit_button = st.form_submit_button(label="Upload to Heroku")
 
-# In the form submission handling section, update the error message:
 if submit_button:
-    if repo and path and token and st.session_state.json_string:
-        # Update session state
-        st.session_state.github_repo = repo
-        st.session_state.github_path = path
-        st.session_state.github_token = token
-        
-        # Perform the upload
-        response = upload_to_github(repo, path, token, st.session_state.json_string)
-        if response.status_code == 201 or response.status_code == 200:
+    if heroku_url and st.session_state.json_string:
+        st.session_state.heroku_url = heroku_url
+        filename = generate_filename(metal_type)
+        response = upload_to_heroku(filename, st.session_state.json_string, heroku_url)
+        if response.status_code == 200:
             st.success("File uploaded successfully!")
         else:
             error_message = response.json().get('message', 'Unknown error')
@@ -143,7 +112,7 @@ if submit_button:
         if not st.session_state.json_string:
             st.warning("Please convert data to JSON before uploading.")
         else:
-            st.warning("Please provide all required GitHub details.")
+            st.warning("Please provide the Heroku App URL.")
 
 st.write("Note: Make sure your data is in the correct format. Each city should be on a new line or separated by spaces.")
 
