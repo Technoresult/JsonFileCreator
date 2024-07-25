@@ -35,7 +35,7 @@ def table_to_json(table_data, metal_type):
         return {"silver_rates": silver_rates}
 
 def upload_to_heroku(file_name, content, heroku_url):
-    url = f"{heroku_url}/upload"
+    url = f"{heroku_url.rstrip('/')}/upload"  # Ensure no double slash
     headers = {"Content-Type": "application/json"}
     data = {"fileName": file_name, "content": content}
     try:
