@@ -54,7 +54,15 @@ def upload_to_heroku(file_name, content, heroku_url):
         "content": content
     }
     response = requests.post(url, headers=headers, json=data)
-    return response
+    
+    if response.status_code == 200 or response.status_code == 201:
+        try:
+            response_json = response.json()
+            return response_json
+        except ValueError:
+            return {"error": "Response is not JSON"}
+    else:
+        return {"error": f"Failed to upload file. Status code: {response.status_code}. Response: {response.text}"}
 
 st.title("Precious Metal Price Data Converter")
 
@@ -102,17 +110,11 @@ if submit_button:
         st.session_state.heroku_url = heroku_url
         filename = generate_filename(metal_type)
         response = upload_to_heroku(filename, st.session_state.json_string, heroku_url)
-        if response.status_code == 200:
+        
+        if "error" in response:
+            st.error(response["error"])
+        else:
             st.success("File uploaded successfully!")
-        else:
-            error_message = response.json().get('message', 'Unknown error')
-            st.error(f"Failed to upload file. Status code: {response.status_code}. Error: {error_message}")
-            st.error(f"Full response: {response.text}")
-    else:
-        if not st.session_state.json_string:
-            st.warning("Please convert data to JSON before uploading.")
-        else:
-            st.warning("Please provide the Heroku App URL.")
 
 st.write("Note: Make sure your data is in the correct format. Each city should be on a new line or separated by spaces.")
 
